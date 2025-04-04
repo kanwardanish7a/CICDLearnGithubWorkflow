@@ -1,0 +1,110 @@
+name: .NET CORE CI/CD Pipeline
+
+on:
+    push:
+        branches: [ "main" ] # Triggers on pushes to main branch
+    pull_request:
+        branches: [ "main" ] # Runs checks on PRs to main
+
+
+env:
+    DOTNET_VERSION: '8.0.x'  # .NET version (match your project)
+    AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}  # From GitHub secrets
+    BUILD_CONFIGURATION: 'Release'
+    PUBLISH_OUTPUT_DIR: './publish'
+
+jobs:
+    build-and-test:
+        name: Build and Test
+        runs-on: ubuntu-latest
+
+        steps:
+            #checkout code
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            #cache nuget packages for faster build
+            - name: Cache Nuget Packages
+              uses: actions/cache@v3
+              with:
+                path: |
+                    ~/.nuget/packages
+                    **/bin/
+                    **/obj/
+                key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                restore-keys: |
+                 ${{ runner.os }}-nuget-
+
+            #Setup .NET Sdk
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v3
+              with:
+                dotnet-version: $({env.DOTNET_VERSION})
+
+                
+            #Restore dependencies
+            - name: Restore dependencies
+              run: dotnet restore
+              env:
+                DOTNET_CLI_TELEMETRY_OPTOUT: 1  # Disables telemetry data
+
+            #Build solution
+            - name: Build Solution
+              run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
+
+            #Run Unit Tests
+            - name: Run tests
+              run: dotnet test --nobuild --verbosity normal
+
+            #Publish
+            - name: Publish Application
+              run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_OUTPUT_DIR }}
+
+            #Upload build artifact for deployment
+            - name: upload build artifact
+              uses: actions/upload-artifact@v3
+              with: 
+                name: dotnet-app
+                path: ${{ env.PUBLISH_OUTPUT_DIR }}
+    
+                
+
+    deploy-to-azure:
+        name: deploy to azure app service
+        needs: build-and-test
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'  # Only deploy from main branch
+
+
+        steps:
+            #Download the build artifact
+        - name: Download artifact
+          uses: actions/download-artifact@v3
+          with: 
+            name: dotnet-app
+
+            #Login to azure using service principal
+        - name: Azure Login
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+            #Deploy to web app
+        - name: App service deployment
+          uses: azure/webapps-deploy@v2
+          with: 
+            app-name: ${{ env.AZURE_WEBAPP_NAME }}
+            package: ${{ env.PUBLISH_OUTPUT_DIR }}
+
+           # Verify API endpoint
+        - name: Verify API Endpoint
+          run: |
+            echo "Testing deployed API..."
+            API_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/weather"
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL)
+            
+            if [ $HTTP_STATUS -eq 200 ]; then
+                echo "API is responding successfully!"
+            else
+                echo "API verification failed with status: $HTTP_STATUS"
+                exit 1
+            fi
