@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\kanwa\\OneDrive\\Desktop\\LearningAndPrepration\\GitWorkflowPractice\\MyNet8App\\MyBackendApp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A73F9A07-2DC7-4E60-8CB2-DF1ACC9420CA}|MyBackendApp\\MyBackendApp.csproj|c:\\users\\kanwa\\onedrive\\desktop\\learningandprepration\\gitworkflowpractice\\mynet8app\\mybackendapp\\mybackendapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A73F9A07-2DC7-4E60-8CB2-DF1ACC9420CA}|MyBackendApp\\MyBackendApp.csproj|solutionrelative:mybackendapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\kanwa\\OneDrive\\Desktop\\LearningAndPrepration\\GitWorkflowPractice\\MyNet8App\\MyBackendApp\\MyBackendApp\\Program.cs",
+              "RelativeDocumentMoniker": "MyBackendApp\\Program.cs",
+              "ToolTip": "C:\\Users\\kanwa\\OneDrive\\Desktop\\LearningAndPrepration\\GitWorkflowPractice\\MyNet8App\\MyBackendApp\\MyBackendApp\\Program.cs",
+              "RelativeToolTip": "MyBackendApp\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD4AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-04T19:36:02.382Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
