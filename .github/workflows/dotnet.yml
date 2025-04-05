@@ -57,9 +57,16 @@ jobs:
             # Publish with debug output
             - name: Publish Application
               run: |
-                dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_OUTPUT_DIR }}
-                echo "Published files:"
+                # Create publish directory if it doesn't exist
+                mkdir -p ${{ env.PUBLISH_OUTPUT_DIR }}
+                
+                # Publish the application
+                dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_OUTPUT_DIR }} --no-build
+                
+                # Verify published files
+                echo "Published files in ${{ env.PUBLISH_OUTPUT_DIR }}:"
                 ls -la ${{ env.PUBLISH_OUTPUT_DIR }}
+                echo "Total files: $(find ${{ env.PUBLISH_OUTPUT_DIR }} -type f | wc -l)"
                    
             # Upload build artifact
             - name: Upload build artifact
