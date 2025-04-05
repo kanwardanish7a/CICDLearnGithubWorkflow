@@ -2,14 +2,13 @@ name: .NET CORE CI/CD Pipeline
 
 on:
     push:
-        branches: [ "main" ] # Triggers on pushes to main branch
+        branches: [ "main" ]
     pull_request:
-        branches: [ "main" ] # Runs checks on PRs to main
-
+        branches: [ "main" ]
 
 env:
-    DOTNET_VERSION: '8.0.x'  # .NET version (match your project)
-    AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}  # From GitHub secrets
+    DOTNET_VERSION: '8.0.x'
+    AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
     BUILD_CONFIGURATION: 'Release'
     PUBLISH_OUTPUT_DIR: './publish'
 
@@ -19,11 +18,12 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            #checkout code
+            # Checkout code
             - name: Checkout repository
               uses: actions/checkout@v4
-            #cache nuget packages for faster build
-            - name: Cache Nuget Packages
+            
+            # Cache NuGet packages
+            - name: Cache NuGet Packages
               uses: actions/cache@v3
               with:
                 path: |
@@ -32,81 +32,78 @@ jobs:
                     **/obj/
                 key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
                 restore-keys: |
-                 ${{ runner.os }}-nuget-
+                    ${{ runner.os }}-nuget-
 
-            #Setup .NET Sdk
+            # Setup .NET SDK
             - name: Setup .NET
               uses: actions/setup-dotnet@v3
               with:
-                dotnet-version: ${{env.DOTNET_VERSION}}
-
+                dotnet-version: ${{ env.DOTNET_VERSION }}  # Fixed syntax
                 
-            #Restore dependencies
+            # Restore dependencies
             - name: Restore dependencies
               run: dotnet restore
               env:
-                DOTNET_CLI_TELEMETRY_OPTOUT: 1  # Disables telemetry data
+                DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
-            #Build solution
+            # Build solution
             - name: Build Solution
               run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity normal
 
-            #Run Unit Tests
+            # Run tests
             - name: Run tests
               run: dotnet test --no-build --verbosity normal
 
-            #Publish
+            # Publish with debug output
             - name: Publish Application
-              run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_OUTPUT_DIR }}
-                   echo "Published files:"
-                   ls -R ${{ env.PUBLISH_OUTPUT_DIR }}
+              run: |
+                dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o ${{ env.PUBLISH_OUTPUT_DIR }}
+                echo "Published files:"
+                ls -la ${{ env.PUBLISH_OUTPUT_DIR }}
                    
-            #Upload build artifact for deployment
-            - name: upload build artifact
+            # Upload build artifact
+            - name: Upload build artifact
               uses: actions/upload-artifact@v4
               with: 
                 name: dotnet-app
                 path: ${{ env.PUBLISH_OUTPUT_DIR }}
     
-                
-
     deploy-to-azure:
-        name: deploy to azure app service
+        name: Deploy to Azure App Service
         needs: build-and-test
         runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/main'  # Only deploy from main branch
-
+        if: github.ref == 'refs/heads/main'
 
         steps:
-            #Download the build artifact
-        - name: Download artifact
-          uses: actions/download-artifact@v4
-          with: 
-            name: dotnet-app
+            # Download the build artifact
+            - name: Download artifact
+              uses: actions/download-artifact@v4
+              with: 
+                name: dotnet-app
 
-            #Login to azure using service principal
-        - name: Azure Login
-          uses: azure/login@v1
-          with:
-            creds: ${{ secrets.AZURE_CREDENTIALS }}
+            # Login to Azure
+            - name: Azure Login
+              uses: azure/login@v1
+              with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-            #Deploy to web app
-        - name: App service deployment
-          uses: azure/webapps-deploy@v2
-          with: 
-            app-name: ${{ env.AZURE_WEBAPP_NAME }}
-            package: ${{ env.PUBLISH_OUTPUT_DIR }}
+            # Deploy to web app
+            - name: App service deployment
+              uses: azure/webapps-deploy@v2
+              with: 
+                app-name: ${{ env.AZURE_WEBAPP_NAME }}
+                package: ${{ env.PUBLISH_OUTPUT_DIR }}/*  # Added wildcard
 
-           # Verify API endpoint
-        - name: Verify API Endpoint
-          run: |
-            echo "Testing deployed API..."
-            API_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/weather"
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL)
-            
-            if [ $HTTP_STATUS -eq 200 ]; then
-                echo "API is responding successfully!"
-            else
-                echo "API verification failed with status: $HTTP_STATUS"
-                exit 1
-            fi
+            # Verify API endpoint
+            - name: Verify API Endpoint
+              run: |
+                echo "Testing deployed API..."
+                API_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/weather"
+                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $API_URL)
+                
+                if [ $HTTP_STATUS -eq 200 ]; then
+                    echo "API is responding successfully!"
+                else
+                    echo "API verification failed with status: $HTTP_STATUS"
+                    exit 1
+                fi
