@@ -53,7 +53,7 @@ jobs:
 
             #Run Unit Tests
             - name: Run tests
-              run: dotnet test --nobuild --verbosity normal
+              run: dotnet test --no-build --verbosity normal
 
             #Publish
             - name: Publish Application
